@@ -2,6 +2,20 @@
   <div
     class="flex flex-col items-center justify-center min-h-screen bg-gray-900"
   >
+    <div class="absolute top-0 w-full bg-gray-800 p-4">
+      <div class="flex items-center justify-center space-x-2">
+        <div
+          :class="{
+            'bg-green-500': serverStatus === 'online',
+            'bg-red-500': serverStatus === 'offline',
+          }"
+          class="w-3 h-3 rounded-full"
+        ></div>
+        <span class="text-white font-semibold pb-1"
+          >Server Status: {{ serverStatus }}</span
+        >
+      </div>
+    </div>
     <h1 class="font-sans pb-2 text-xl font-bold text-white">Ssst... 🤫</h1>
     <input
       type="file"
@@ -56,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import Swal from "sweetalert2";
 import axios from "axios";
 
@@ -68,6 +82,7 @@ const fileInput = ref(null);
 const progress = ref(0);
 const previewUrl = ref(null);
 const isImage = ref(false);
+const serverStatus = ref("offline");
 let selectedFile = null;
 
 const triggerFileInput = () => {
@@ -106,10 +121,30 @@ const getEndpointList = async () => {
     // set quietCloudUrl from first array of response data
     quietCloudUrl = response.data[0].url;
 
+    // test the endpoint url
+    await testEndpoint(quietCloudUrl);
+
+    // set server status to online
+    serverStatus.value = "online";
+
     // show success message
     Swal.fire("Success", "Endpoint list fetched successfully", "success");
   } catch (error) {
     console.error(error);
+    serverStatus.value = "offline";
+  }
+};
+
+const testEndpoint = async (url) => {
+  try {
+    const response = await axios.get(`${url}/api/status`);
+    if (response.status === 200) {
+      return true;
+    } else {
+      throw new Error("Endpoint test failed");
+    }
+  } catch (error) {
+    throw new Error("Endpoint test failed");
   }
 };
 
@@ -131,7 +166,7 @@ const confirmUpload = async () => {
       },
     });
 
-    if (response.status === 200) {
+    if (response.status === 201) {
       Swal.fire("Success", "File uploaded successfully", "success");
       resetFileInput();
     } else {
@@ -159,7 +194,7 @@ const resetFileInput = () => {
 };
 
 // on mounted
-getEndpointList();
+onMounted(getEndpointList);
 </script>
 
 <style scoped>
