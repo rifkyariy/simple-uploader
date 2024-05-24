@@ -62,7 +62,7 @@ import axios from "axios";
 
 // endpoint from env
 const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL;
-const quietCloudUrl = "";
+let quietCloudUrl = "";
 
 const fileInput = ref(null);
 const progress = ref(0);
@@ -103,8 +103,8 @@ const getEndpointList = async () => {
   try {
     const response = await axios.get(`${ENDPOINT_URL}/projects`);
 
-    // set quietCloudUrl
-    quietCloudUrl = response.data.url;
+    // set quietCloudUrl from first array of response data
+    quietCloudUrl = response.data[0].url;
 
     // show success message
     Swal.fire("Success", "Endpoint list fetched successfully", "success");
@@ -120,7 +120,7 @@ const confirmUpload = async () => {
   formData.append("file", selectedFile);
 
   try {
-    const response = await axios.post(`${ENDPOINT_URL}`, formData, {
+    const response = await axios.post(`${quietCloudUrl}/api/upload`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
